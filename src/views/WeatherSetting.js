@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import styled from '@emotion/styled';
-
 import { availableLocations } from './../utils/helpers';
 
 const WeatherSettingWrapper = styled.div`
@@ -41,6 +40,7 @@ const StyledSelect = styled.select`
   -moz-appearance: none;
   box-shadow: none;
   outline: 0;
+  cursor: pointer;
 `;
 
 const ButtonGroup = styled.div`
@@ -94,36 +94,25 @@ const Save = styled.button`
   }
 `;
 
-const WeatherSetting = ({
-  cityName,
-  handleCurrentCityChange,
-  handleCurrentPageChange,
-}) => {
+export const WeatherSetting = ({ cityName, setCurrentPage, setCurrentCity }) => {
   const [locationName, setLocationName] = useState(cityName);
 
-  const handleChange = (e) => {
-    setLocationName(e.target.value);
-  };
-
+  const handleChange = (e) => setLocationName(e.target.value);
   const handleSave = () => {
-    console.log(`儲存的地區資訊為：${locationName}`);
-    handleCurrentCityChange(locationName);
-    handleCurrentPageChange('WeatherCard');
+    setCurrentCity(locationName);
+    setCurrentPage('WeatherCard');
     localStorage.setItem('cityName', locationName);
+
+    console.log('cityName:', locationName);
   };
 
   return (
     <WeatherSettingWrapper>
       <Title>設定</Title>
-      <StyledLabel htmlFor="location">地區</StyledLabel>
 
-      <StyledSelect
-        id="location"
-        name="location"
-        onChange={handleChange}
-        value={locationName}
-      >
-        {availableLocations.map(({ cityName }) => (
+      <StyledLabel htmlFor='location'>地區</StyledLabel>
+      <StyledSelect id='location' name='location' onChange={handleChange} value={locationName}>
+        {availableLocations.map(({cityName}) => (
           <option value={cityName} key={cityName}>
             {cityName}
           </option>
@@ -131,11 +120,9 @@ const WeatherSetting = ({
       </StyledSelect>
 
       <ButtonGroup>
-        <Back onClick={() => handleCurrentPageChange('WeatherCard')}>返回</Back>
+        <Back onClick={() => setCurrentPage('WeatherCard')}>返回</Back>
         <Save onClick={handleSave}>儲存</Save>
       </ButtonGroup>
     </WeatherSettingWrapper>
-  );
+  )
 };
-
-export default WeatherSetting;

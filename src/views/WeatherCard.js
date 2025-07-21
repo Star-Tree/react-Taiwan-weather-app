@@ -1,12 +1,12 @@
 import styled from '@emotion/styled';
 import dayjs from 'dayjs';
 
-import WeatherIcon from './../components/WeatherIcon.js';
 import { ReactComponent as AirFlowIcon } from './../images/airFlow.svg';
-import { ReactComponent as CogIcon } from './../images/cog.svg';
 import { ReactComponent as LoadingIcon } from './../images/loading.svg';
 import { ReactComponent as RainIcon } from './../images/rain.svg';
 import { ReactComponent as RefreshIcon } from './../images/refresh.svg';
+import { ReactComponent as CogIcon } from './../images/cog.svg';
+import { WeatherIcon } from './../components/WeatherIcon';
 
 const WeatherCardWrapper = styled.div`
   position: relative;
@@ -91,10 +91,12 @@ const Refresh = styled.div`
     width: 15px;
     height: 15px;
     cursor: pointer;
+    /* STEP 2：使用 rotate 動畫效果在 svg 圖示上 */
     animation: rotate infinite 1.5s linear;
     animation-duration: ${({ isLoading }) => (isLoading ? '1.5s' : '0s')};
   }
 
+  /* STEP 1：定義旋轉的動畫效果，並取名為 rotate */
   @keyframes rotate {
     from {
       transform: rotate(360deg);
@@ -112,29 +114,29 @@ const Cog = styled(CogIcon)`
   width: 15px;
   height: 15px;
   cursor: pointer;
-`;
+`
 
-const WeatherCard = ({
+export const WeatherCard = ({ 
   weatherElement,
   moment,
   fetchData,
-  handleCurrentPageChange,
+  setCurrentPage,
   cityName,
 }) => {
   const {
-    observationTime,
-    temperature,
-    windSpeed,
     description,
-    weatherCode,
-    rainPossibility,
     comfortability,
+    windSpeed,
+    temperature,
+    rainPossibility,
+    observationTime,
     isLoading,
+    weatherCode
   } = weatherElement;
 
   return (
     <WeatherCardWrapper>
-      <Cog onClick={() => handleCurrentPageChange('WeatherSetting')} />
+      <Cog onClick={() => setCurrentPage('WeatherSetting')} />
       <Location>{cityName}</Location>
       <Description>
         {description} {comfortability}
@@ -143,15 +145,19 @@ const WeatherCard = ({
         <Temperature>
           {Math.round(temperature)} <Celsius>°C</Celsius>
         </Temperature>
+
         <WeatherIcon weatherCode={weatherCode} moment={moment} />
       </CurrentWeather>
       <AirFlow>
-        <AirFlowIcon /> {windSpeed} m/h
+        <AirFlowIcon />{windSpeed} m/h
       </AirFlow>
       <Rain>
-        <RainIcon /> {rainPossibility}%
+        <RainIcon />{rainPossibility}%
       </Rain>
-      <Refresh onClick={fetchData} isLoading={isLoading}>
+      <Refresh
+        onClick={() => fetchData()}
+        isLoading={isLoading}
+      >
         最後觀測時間：
         {new Intl.DateTimeFormat('zh-TW', {
           hour: 'numeric',
@@ -162,5 +168,3 @@ const WeatherCard = ({
     </WeatherCardWrapper>
   );
 };
-
-export default WeatherCard;

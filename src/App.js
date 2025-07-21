@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ThemeProvider } from '@emotion/react';
+import { useState, useEffect, useMemo } from 'react';
 import styled from '@emotion/styled';
-
-import WeatherCard from './views/WeatherCard';
-import WeatherSetting from './views/WeatherSetting';
-import useWeatherAPI from './hooks/useWeatherAPI';
-import { findLocation, getMoment } from './utils/helpers';
+import { ThemeProvider } from '@emotion/react';
+import { WeatherCard } from './views/WeatherCard';
+import { WeatherSetting } from './views/WeatherSetting';
+import { useWeatherAPI } from './hooks/useWeatherAPI';
+import { getMoment, findLocation } from './utils/helpers';
 
 const theme = {
   light: {
@@ -35,54 +34,49 @@ const Container = styled.div`
   justify-content: center;
 `;
 
-const AUTHORIZATION_KEY = 'CWB-507B37E0-0383-4D8C-878D-628B54EC3536';
+const AUTHORIZATION_KEY = process.env.REACT_APP_WEATHER_API_AUTHORIZATION_KEY;
 
 const App = () => {
+  console.log('--- invoke function component ---');
+  
+  const [currentTheme, setCurrentTheme] = useState('light');
   const [currentCity, setCurrentCity] = useState(() => localStorage.getItem('cityName') || '臺北市');
   const [currentPage, setCurrentPage] = useState('WeatherCard');
-  const [currentTheme, setCurrentTheme] = useState('light');
 
-  const handleCurrentPageChange = (currentPage) => {
-    setCurrentPage(currentPage);
-  };
+  const currentLocation = useMemo(() => findLocation(currentCity), [currentCity]);
 
-  const handleCurrentCityChange = (currentCity) => {
-    setCurrentCity(currentCity);
-  };
+  const {cityName, locationName, sunriseCityName } = currentLocation;
 
-  const currentLocation = useMemo(() => findLocation(currentCity), [
-    currentCity,
-  ]);
-  const { cityName, locationName, sunriseCityName } = currentLocation;
-  const moment = useMemo(() => getMoment(sunriseCityName), [sunriseCityName]);
   const [weatherElement, fetchData] = useWeatherAPI({
     locationName,
     cityName,
     authorizationKey: AUTHORIZATION_KEY,
   });
 
+  const moment = useMemo(() => getMoment(sunriseCityName), [sunriseCityName]);
+
   useEffect(() => {
-    setCurrentTheme(moment === 'day' ? 'light' : 'dark');
+    setCurrentTheme((moment === 'day') ? 'light' : 'dark')
   }, [moment]);
 
   return (
     <ThemeProvider theme={theme[currentTheme]}>
       <Container>
-        {currentPage === 'WeatherCard' && (
-          <WeatherCard
+        {(currentPage === 'WeatherCard') && (
+          <WeatherCard 
             cityName={cityName}
             weatherElement={weatherElement}
             moment={moment}
             fetchData={fetchData}
-            handleCurrentPageChange={handleCurrentPageChange}
+            setCurrentPage={setCurrentPage}
           />
         )}
 
-        {currentPage === 'WeatherSetting' && (
-          <WeatherSetting
+        {(currentPage === 'WeatherSetting') && (
+          <WeatherSetting 
             cityName={cityName}
-            handleCurrentCityChange={handleCurrentCityChange}
-            handleCurrentPageChange={handleCurrentPageChange}
+            setCurrentPage={setCurrentPage}
+            setCurrentCity={setCurrentCity}
           />
         )}
       </Container>

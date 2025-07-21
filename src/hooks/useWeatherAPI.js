@@ -1,17 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
+import {useState, useEffect, useCallback } from 'react';
 
 const fetchCurrentWeather = ({ authorizationKey, locationName }) => {
   return fetch(
-    `https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${authorizationKey}&locationName=${locationName}`
+    `https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${authorizationKey}&StationName=${locationName}`
   )
     .then((response) => response.json())
     .then((data) => {
-      const locationData = data.records.location[0];
+      const locationData = data.records.Station[0];
+      const neededKeys = ['WindSpeed', 'AirTemperature'];
 
-      const weatherElements = locationData.weatherElement.reduce(
-        (neededElements, item) => {
-          if (['WDSD', 'TEMP'].includes(item.elementName)) {
-            neededElements[item.elementName] = item.elementValue;
+      const weatherElements = Object.entries(locationData.WeatherElement).reduce(
+        (neededElements, [key, value]) => {
+          if (neededKeys.includes(key)) {
+            neededElements[key] = value;
           }
           return neededElements;
         },
@@ -19,21 +20,22 @@ const fetchCurrentWeather = ({ authorizationKey, locationName }) => {
       );
 
       return {
-        observationTime: locationData.time.obsTime,
-        locationName: locationData.locationName,
-        temperature: weatherElements.TEMP,
-        windSpeed: weatherElements.WDSD,
+        observationTime: locationData.ObsTime.DateTime,
+        locationName: locationData.StationName,
+        temperature: weatherElements.AirTemperature,
+        windSpeed: weatherElements.WindSpeed,
       };
-    });
+  });
 };
 
 const fetchWeatherForecast = ({ authorizationKey, cityName }) => {
   return fetch(
-    `https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${authorizationKey}&locationName=${cityName}`
+    `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${authorizationKey}&locationName=${cityName}`
   )
     .then((response) => response.json())
     .then((data) => {
       const locationData = data.records.location[0];
+
       const weatherElements = locationData.weatherElement.reduce(
         (neededElements, item) => {
           if (['Wx', 'PoP', 'CI'].includes(item.elementName)) {
@@ -50,10 +52,10 @@ const fetchWeatherForecast = ({ authorizationKey, cityName }) => {
         rainPossibility: weatherElements.PoP.parameterName,
         comfortability: weatherElements.CI.parameterName,
       };
-    });
+  });
 };
 
-const useWeatherAPI = ({ locationName, cityName, authorizationKey }) => {
+export const useWeatherAPI = ({ locationName, cityName, authorizationKey }) => {
   const [weatherElement, setWeatherElement] = useState({
     observationTime: new Date(),
     locationName: '',
@@ -67,28 +69,26 @@ const useWeatherAPI = ({ locationName, cityName, authorizationKey }) => {
   });
 
   const fetchData = useCallback(async () => {
-    setWeatherElement((prevState) => ({
-      ...prevState,
-      isLoading: true,
-    }));
+      setWeatherElement((prevState) => ({
+        ...prevState,
+        isLoading: true,
+      }));
+  
+      const [currentWeather, weatherForecast] = await Promise.all([
+        fetchCurrentWeather({authorizationKey, locationName}),
+        fetchWeatherForecast({authorizationKey, cityName}),
+      ]);
+  
+      setWeatherElement({
+        ...currentWeather,
+        ...weatherForecast,
+        isLoading: false,
+      });
+    }, [authorizationKey, cityName, locationName]);
 
-    const [currentWeather, weatherForecast] = await Promise.all([
-      fetchCurrentWeather({ authorizationKey, locationName }),
-      fetchWeatherForecast({ authorizationKey, cityName }),
-    ]);
-
-    setWeatherElement({
-      ...currentWeather,
-      ...weatherForecast,
-      isLoading: false,
-    });
-  }, [authorizationKey, cityName, locationName]);
-
-  useEffect(() => {
-    fetchData();
+  useEffect(() => { 
+    fetchData() 
   }, [fetchData]);
 
-  return [weatherElement, fetchData];
+  return [weatherElement, fetchData]
 };
-
-export default useWeatherAPI;
